@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useCreateTask } from "@/features/board/hooks";
+import { useCreateTask, useDeleteColumn, useDeleteTask } from "@/features/board/hooks";
 
 type TaskLite = { id: string; title: string };
 
@@ -18,11 +18,21 @@ export default function ColumnCard({
 }) {
   const [taskTitle, setTaskTitle] = useState("");
   const createTask = useCreateTask(boardId, colId);
+  const delColumn = useDeleteColumn(boardId);
+  const delTask = useDeleteTask(boardId);
 
   return (
     <div className="min-w-[260px] rounded-xl border border-neutral-200 bg-white p-4">
-      <div className="mb-3 text-lg font-medium">{title}</div>
-
+      <div className="mb-3 flex items-center justify-between">
+        <div className="text-lg font-medium">{title}</div>
+        <button
+          onClick={() => delColumn.mutate(colId)}
+          className="rounded-md px-2 py-1 text-sm hover:bg-neutral-100"
+          aria-label="Delete column"
+        >
+          🗑
+        </button>
+      </div>
       <form
         className="mb-3 flex gap-2"
         onSubmit={(e) => {
@@ -52,9 +62,16 @@ export default function ColumnCard({
         {tasks.map((t) => (
           <li
             key={t.id}
-            className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2"
+            className="flex items-center justify-between rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2"
           >
-            {t.title}
+            <span>{t.title}</span>
+            <button
+              onClick={() => delTask.mutate(t.id)}
+              className="rounded-md px-2 py-1 text-sm hover:bg-neutral-100"
+              aria-label="Delete task"
+            >
+              ×
+            </button>
           </li>
         ))}
       </ul>

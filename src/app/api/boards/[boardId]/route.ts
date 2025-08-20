@@ -18,3 +18,17 @@ export async function GET(
   }
   return NextResponse.json(board);
 }
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ boardId: string }> },
+) {
+  const { boardId } = await params;
+  await prisma.$transaction([
+    prisma.task.deleteMany({ where: { column: { boardId } } }),
+    prisma.column.deleteMany({ where: { boardId } }),
+    prisma.board.delete({ where: { id: boardId } }),
+  ]);
+
+  return NextResponse.json({ ok: true });
+}

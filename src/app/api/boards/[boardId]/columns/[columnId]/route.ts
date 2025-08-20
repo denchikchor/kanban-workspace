@@ -23,12 +23,12 @@ export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ boardId: string; columnId: string }> },
 ) {
-  const { columnId } = await params;
+  const { boardId, columnId } = await params;
 
-  try {
-    await prisma.column.delete({ where: { id: columnId } });
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "Column not found" }, { status: 404 });
-  }
+  await prisma.$transaction([
+    prisma.task.deleteMany({ where: { columnId } }),
+    prisma.column.delete({ where: { id: columnId } }),
+  ]);
+
+  return NextResponse.json({ ok: true });
 }

@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { useBoard, useColumns, useCreateColumn } from "@/features/board/hooks";
 import ColumnCard from "@/features/board/components/ColumnCard";
+import Link from "next/link";
 
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
@@ -14,7 +15,14 @@ export default function BoardPage() {
 
   return (
     <div className="p-6">
-      <h1 className="mb-4 text-2xl font-semibold">{board?.title ?? "Board"}</h1>
+      <Link
+        className="rounded-md px-2 py-1 text-lg hover:bg-neutral-100"
+        aria-label="Boards"
+        href={`/app`}
+      >
+        ← Boards
+      </Link>
+      <h1 className="mt-6 mb-4 text-2xl font-semibold">{board?.title ?? "Board"}</h1>
 
       <form
         className="mb-6 flex gap-2"
@@ -46,13 +54,7 @@ export default function BoardPage() {
       ) : (
         <div className="flex gap-4 overflow-x-auto">
           {(columns ?? []).map((c) => (
-            <ColumnCard
-              key={c.id}
-              boardId={boardId}
-              colId={c.id}
-              title={c.title}
-              tasks={c.tasks}
-            />
+            <ColumnCard key={c.id} boardId={boardId} colId={c.id} title={c.title} tasks={c.tasks} />
           ))}
         </div>
       )}

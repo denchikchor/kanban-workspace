@@ -33,3 +33,29 @@ export function useCreateBoard() {
     },
   });
 }
+
+export function useDeleteBoard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (boardId: string) => {
+      const res = await fetch(`/api/boards/${boardId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete board");
+      return true;
+    },
+    onMutate: async (boardId: string) => {
+      await qc.cancelQueries({ queryKey: ["boards"] });
+      const prev = qc.getQueryData<Board[]>(["boards"]) ?? [];
+      qc.setQueryData<Board[]>(
+        ["boards"],
+        prev.filter((board) => board.id !== boardId),
+      );
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["boards"], ctx.prev);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["boards"] });
+    },
+  });
+}

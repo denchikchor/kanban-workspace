@@ -1,6 +1,6 @@
 "use client";
 
-import { useBoards, useCreateBoard } from "@/features/boards/hooks";
+import { useBoards, useCreateBoard, useDeleteBoard } from "@/features/boards/hooks";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -9,14 +9,13 @@ export default function AppHome() {
   const createBoard = useCreateBoard();
   const [title, setTitle] = useState("");
   const [open, setOpen] = useState(true);
+  const delBoard = useDeleteBoard();
 
   return (
     <div className="grid min-h-[calc(100dvh-0px)] grid-cols-1 md:grid-cols-[240px_1fr]">
       {/* Sidebar */}
       <aside
-        className={`border-r border-neutral-200 bg-white p-4 ${
-          open ? "" : "hidden md:block"
-        }`}
+        className={`border-r border-neutral-200 bg-white p-4 ${open ? "" : "hidden md:block"}`}
       >
         <div className="mb-4 flex items-center justify-between">
           <span className="font-semibold">Navigation</span>
@@ -28,15 +27,10 @@ export default function AppHome() {
           </button>
         </div>
         <nav className="space-y-1">
-          <Link
-            href="/app"
-            className="block rounded-lg px-3 py-2 hover:bg-neutral-100"
-          >
+          <Link href="/app" className="block rounded-lg px-3 py-2 hover:bg-neutral-100">
             Dashboard
           </Link>
-          <span className="block rounded-lg px-3 py-2 text-neutral-400">
-            Boards (coming soon)
-          </span>
+          <span className="block rounded-lg px-3 py-2 text-neutral-400">Boards (coming soon)</span>
           <span className="block rounded-lg px-3 py-2 text-neutral-400">
             Settings (coming soon)
           </span>
@@ -52,7 +46,7 @@ export default function AppHome() {
           Menu
         </button>
 
-        <h2 className="mb-2 text-2xl font-semibold">Your Boards</h2>
+        <h2 className="mb-2 text-2xl font-semibold">Your Board</h2>
 
         <form
           className="mb-6 flex gap-2"
@@ -82,19 +76,22 @@ export default function AppHome() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(data ?? []).map((b) => (
-            <div
-              key={b.id}
-              className="rounded-xl border border-neutral-300 bg-white p-4"
-            >
-              <Link
-                href={`/app/board/${b.id}`}
-                className="text-lg font-medium hover:underline"
-              >
-                {b.title}
-              </Link>
-              <div className="text-sm text-neutral-500 mt-1">
-                {new Date(b.createdAt).toLocaleDateString()}
+            <div key={b.id} className="rounded-xl border border-neutral-300 bg-white p-4 flex">
+              <div>
+                <Link href={`/app/board/${b.id}`} className="text-lg font-medium hover:underline">
+                  {b.title}
+                </Link>
+                <div className="text-sm text-neutral-500 mt-1">
+                  {new Date(b.createdAt).toLocaleDateString()}
+                </div>
               </div>
+              <button
+                onClick={() => delBoard.mutate(b.id)}
+                className="ml-auto rounded-md px-2 py-1 text-sm hover:bg-neutral-100"
+                aria-label="Delete board"
+              >
+                🗑
+              </button>
             </div>
           ))}
         </div>
