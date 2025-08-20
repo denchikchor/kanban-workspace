@@ -5,8 +5,18 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { PropsWithChildren, useState } from "react";
 
 export default function RQProvider({ children }: PropsWithChildren) {
-  // один QueryClient на життєвий цикл вкладки
-  const [client] = useState(() => new QueryClient());
+  const [client] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            refetchOnWindowFocus: true,
+            refetchOnReconnect: true,
+            staleTime: 0,
+          },
+        },
+      }),
+  );
   return (
     <QueryClientProvider client={client}>
       {children}

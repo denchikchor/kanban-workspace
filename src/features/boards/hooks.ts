@@ -11,6 +11,8 @@ export function useBoards() {
       if (!res.ok) throw new Error("Failed to fetch boards");
       return res.json();
     },
+    refetchInterval: 10000,
+    refetchIntervalInBackground: false,
   });
 }
 

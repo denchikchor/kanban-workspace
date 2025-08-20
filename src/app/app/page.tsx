@@ -86,7 +86,12 @@ export default function AppHome() {
               key={b.id}
               className="rounded-xl border border-neutral-300 bg-white p-4"
             >
-              <div className="text-lg font-medium">{b.title}</div>
+              <Link
+                href={`/app/board/${b.id}`}
+                className="text-lg font-medium hover:underline"
+              >
+                {b.title}
+              </Link>
               <div className="text-sm text-neutral-500 mt-1">
                 {new Date(b.createdAt).toLocaleDateString()}
               </div>
