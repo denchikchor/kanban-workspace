@@ -5,21 +5,30 @@ export const runtime = "nodejs";
 
 export async function GET(
   _req: Request,
-  { params }: { params: Record<string, string> },
+  { params }: { params: Promise<{ boardId: string; columnId: string }> },
 ) {
-  const { boardId } = params;
+  const { columnId } = await params;
+
+  const column = await prisma.column.findUnique({
+    where: { id: columnId },
+    include: { tasks: { orderBy: { order: "asc" } } },
+  });
+
+  if (!column)
+    return NextResponse.json({ error: "Column not found" }, { status: 404 });
+  return NextResponse.json(column);
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ boardId: string; columnId: string }> },
+) {
+  const { columnId } = await params;
 
   try {
-    const columns = await prisma.column.findMany({
-      where: { boardId },
-      include: { tasks: true },
-    });
-
-    return NextResponse.json(columns);
-  } catch (e) {
-    return NextResponse.json(
-      { error: "Failed to fetch columns" },
-      { status: 500 },
-    );
+    await prisma.column.delete({ where: { id: columnId } });
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Column not found" }, { status: 404 });
   }
 }

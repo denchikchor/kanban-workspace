@@ -11,6 +11,7 @@ export function useBoard(boardId: string) {
       if (!res.ok) throw new Error("Failed to fetch board");
       return res.json();
     },
+    enabled: !!boardId,
   });
 }
 
@@ -24,6 +25,8 @@ export function useColumns(boardId: string) {
       if (!res.ok) throw new Error("Failed to fetch columns");
       return res.json();
     },
+    enabled: !!boardId,
+    initialData: [],
     refetchInterval: 10000,
     refetchIntervalInBackground: false,
   });
