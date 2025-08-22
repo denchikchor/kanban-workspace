@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ boardId: string; columnId: string }> },
+  { params }: { params: Promise<{ boardId: string; columnId: string }> }
 ) {
   const { columnId } = await params;
 
@@ -14,14 +14,13 @@ export async function GET(
     include: { tasks: { orderBy: { order: "asc" } } },
   });
 
-  if (!column)
-    return NextResponse.json({ error: "Column not found" }, { status: 404 });
+  if (!column) return NextResponse.json({ error: "Column not found" }, { status: 404 });
   return NextResponse.json(column);
 }
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: Promise<{ boardId: string; columnId: string }> },
+  { params }: { params: Promise<{ boardId: string; columnId: string }> }
 ) {
   const { boardId, columnId } = await params;
 
@@ -31,4 +30,17 @@ export async function DELETE(
   ]);
 
   return NextResponse.json({ ok: true });
+}
+
+export async function PUT(
+  _req: Request,
+  { params }: { params: Promise<{ boardId: string; columnId: string }> }
+) {
+  const { columnId } = await params;
+  const { title } = await _req.json();
+  if (!title || typeof title !== "string") {
+    return NextResponse.json({ error: "title required" }, { status: 400 });
+  }
+  const updated = await prisma.column.update({ where: { id: columnId }, data: { title } });
+  return NextResponse.json(updated);
 }

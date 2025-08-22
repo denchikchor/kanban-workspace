@@ -3,10 +3,7 @@ import { prisma } from "@/server/db";
 
 export const runtime = "nodejs";
 
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ boardId: string }> },
-) {
+export async function GET(_req: Request, { params }: { params: Promise<{ boardId: string }> }) {
   const { boardId } = await params;
   if (!boardId) {
     return NextResponse.json({ error: "Missing boardId" }, { status: 400 });
@@ -19,10 +16,7 @@ export async function GET(
   return NextResponse.json(board);
 }
 
-export async function DELETE(
-  _req: Request,
-  { params }: { params: Promise<{ boardId: string }> },
-) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ boardId: string }> }) {
   const { boardId } = await params;
   await prisma.$transaction([
     prisma.task.deleteMany({ where: { column: { boardId } } }),
@@ -31,4 +25,14 @@ export async function DELETE(
   ]);
 
   return NextResponse.json({ ok: true });
+}
+
+export async function PUT(_req: Request, { params }: { params: Promise<{ boardId: string }> }) {
+  const { boardId } = await params;
+  const { title } = await _req.json();
+  if (!title || typeof title !== "string") {
+    return NextResponse.json({ error: "title required" }, { status: 400 });
+  }
+  const updated = await prisma.board.update({ where: { id: boardId }, data: { title } });
+  return NextResponse.json(updated);
 }

@@ -47,7 +47,37 @@ export function useDeleteBoard() {
       const prev = qc.getQueryData<Board[]>(["boards"]) ?? [];
       qc.setQueryData<Board[]>(
         ["boards"],
-        prev.filter((board) => board.id !== boardId),
+        prev.filter((board) => board.id !== boardId)
+      );
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["boards"], ctx.prev);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["boards"] });
+    },
+  });
+}
+
+export function useUpdateBoardTitle() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ boardId, title }: { boardId: string; title: string }) => {
+      const res = await fetch(`/api/boards/${boardId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+      if (!res.ok) throw new Error("Failed to update board title");
+      return res.json() as Promise<Board>;
+    },
+    onMutate: async ({ boardId, title }) => {
+      await qc.cancelQueries({ queryKey: ["boards"] });
+      const prev = qc.getQueryData<Board[]>(["boards"]) ?? [];
+      qc.setQueryData<Board[]>(
+        ["boards"],
+        prev.map((board) => (board.id === boardId ? { ...board, title } : board))
       );
       return { prev };
     },

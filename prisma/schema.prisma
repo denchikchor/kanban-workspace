@@ -17,25 +17,28 @@ model Board {
 model Column {
   id        String   @id @default(cuid())
   title     String
-  order     Int      @default(0)
+  order     Int
   createdAt DateTime @default(now())
 
   board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
   boardId String
 
   tasks   Task[]
+
+  @@index([boardId, order])
   @@index([boardId])
 }
 
 model Task {
   id        String   @id @default(cuid())
   title     String
-  order     Int      @default(0)
+  order     Int
   createdAt DateTime @default(now())
 
   column   Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
   columnId String
 
+  @@index([columnId, order])
   @@index([columnId])
 }
 

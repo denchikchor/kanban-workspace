@@ -1,6 +1,12 @@
 "use client";
 
-import { useBoards, useCreateBoard, useDeleteBoard } from "@/features/boards/hooks";
+import BoardCard from "@/features/board/components/BoardCard";
+import {
+  useBoards,
+  useCreateBoard,
+  useDeleteBoard,
+  useUpdateBoardTitle,
+} from "@/features/boards/hooks";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -10,6 +16,7 @@ export default function AppHome() {
   const [title, setTitle] = useState("");
   const [open, setOpen] = useState(true);
   const delBoard = useDeleteBoard();
+  const updateBoard = useUpdateBoardTitle();
 
   return (
     <div className="grid min-h-[calc(100dvh-0px)] grid-cols-1 md:grid-cols-[240px_1fr]">
@@ -76,23 +83,12 @@ export default function AppHome() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(data ?? []).map((b) => (
-            <div key={b.id} className="rounded-xl border border-neutral-300 bg-white p-4 flex">
-              <div>
-                <Link href={`/app/board/${b.id}`} className="text-lg font-medium hover:underline">
-                  {b.title}
-                </Link>
-                <div className="text-sm text-neutral-500 mt-1">
-                  {new Date(b.createdAt).toLocaleDateString()}
-                </div>
-              </div>
-              <button
-                onClick={() => delBoard.mutate(b.id)}
-                className="ml-auto rounded-md px-2 py-1 text-sm hover:bg-neutral-100"
-                aria-label="Delete board"
-              >
-                🗑
-              </button>
-            </div>
+            <BoardCard
+              key={b.id}
+              board={b}
+              onUpdate={updateBoard.mutate}
+              onDelete={delBoard.mutate}
+            />
           ))}
         </div>
       </main>

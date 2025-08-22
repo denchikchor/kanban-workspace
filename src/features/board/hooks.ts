@@ -52,6 +52,7 @@ export function useCreateColumn(boardId: string) {
 
 export function useDeleteColumn(boardId: string) {
   const qc = useQueryClient();
+  const key = ["columns", boardId] as const;
   return useMutation({
     mutationFn: async (columnId: string) => {
       const res = await fetch(`/api/boards/${boardId}/columns/${columnId}`, { method: "DELETE" });
@@ -59,7 +60,6 @@ export function useDeleteColumn(boardId: string) {
       return true;
     },
     onMutate: async (columnId: string) => {
-      const key = ["columns", boardId] as const;
       await qc.cancelQueries({ queryKey: key });
       const prev = qc.getQueryData<ColumnWithTasks[]>(key) || [];
       qc.setQueryData<ColumnWithTasks[]>(
@@ -69,10 +69,73 @@ export function useDeleteColumn(boardId: string) {
       return { prev };
     },
     onError: (_e, _id, ctx) => {
-      qc.setQueryData(["columns", boardId], ctx?.prev);
+      qc.setQueryData(key, ctx?.prev);
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["columns", boardId] });
+      qc.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+
+export function useUpdateColumnTitle(boardId: string) {
+  const qc = useQueryClient();
+  const key = ["columns", boardId] as const;
+  return useMutation({
+    mutationFn: async ({ columnId, title }: { columnId: string; title: string }) => {
+      const res = await fetch(`/api/boards/${boardId}/columns/${columnId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+      if (!res.ok) throw new Error("Failed to update column");
+      return res.json() as Promise<ColumnWithTasks>;
+    },
+    onMutate: async ({ columnId, title }) => {
+      await qc.cancelQueries({ queryKey: key });
+      const prev = qc.getQueryData<ColumnWithTasks[]>(key) ?? [];
+      qc.setQueryData<ColumnWithTasks[]>(
+        key,
+        prev.map((column) => (column.id === columnId ? { ...column, title } : column))
+      );
+      return { prev };
+    },
+    onError: (_e, _id, ctx) => {
+      qc.setQueryData(key, ctx?.prev);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+
+export function useReorderColumns(boardId: string) {
+  const qc = useQueryClient();
+  const key = ["columns", boardId] as const;
+
+  return useMutation({
+    mutationFn: async (args: { sourceIndex: number; destinationIndex: number }) => {
+      const res = await fetch(`/api/boards/${boardId}/reorder-columns`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...args }),
+      });
+      if (!res.ok) throw new Error("Failed to reorder columns");
+      return res.json();
+    },
+    onMutate: async ({ sourceIndex, destinationIndex }) => {
+      await qc.cancelQueries({ queryKey: key });
+      const prev = qc.getQueryData<ColumnWithTasks[]>(key) ?? [];
+      const next = prev.slice();
+      const [moved] = next.splice(sourceIndex, 1);
+      next.splice(destinationIndex, 0, moved);
+      qc.setQueryData(key, next);
+      return { prev };
+    },
+    onError: (_e, _args, ctx) => {
+      if (ctx?.prev) qc.setQueryData(key, ctx.prev);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: key });
     },
   });
 }
@@ -119,6 +182,99 @@ export function useDeleteTask(boardId: string) {
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["columns", boardId] });
+    },
+  });
+}
+
+export function useUpdateTaskTitle(boardId: string) {
+  const qc = useQueryClient();
+  const key = ["columns", boardId] as const;
+  return useMutation({
+    mutationFn: async ({ taskId, title }: { taskId: string; title: string }) => {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+      if (!res.ok) throw new Error("Failed to update task");
+      return res.json() as Promise<Task>;
+    },
+    onMutate: async ({ taskId, title }) => {
+      await qc.cancelQueries({ queryKey: key });
+      const prev = qc.getQueryData<ColumnWithTasks[]>(key) || [];
+      const next = prev.map((column) => ({
+        ...column,
+        tasks: column.tasks.map((task) => (task.id === taskId ? { ...task, title } : task)),
+      }));
+      qc.setQueryData(key, next);
+      return { prev };
+    },
+    onError: (_e, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(key, ctx.prev);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+
+export function useReorderTasks(boardId: string) {
+  const qc = useQueryClient();
+  const key = ["columns", boardId] as const;
+
+  return useMutation({
+    mutationFn: async (args: {
+      taskId: string;
+      sourceColumnId: string;
+      destinationColumnId: string;
+      sourceIndex: number;
+      destinationIndex: number;
+    }) => {
+      const r = await fetch(`/api/tasks/reorder`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(args),
+      });
+      if (!r.ok) throw new Error("Failed to reorder task");
+      return r.json();
+    },
+    onMutate: async ({
+      taskId,
+      sourceColumnId,
+      destinationColumnId,
+      sourceIndex,
+      destinationIndex,
+    }) => {
+      await qc.cancelQueries({ queryKey: key });
+      const prev = qc.getQueryData<ColumnWithTasks[]>(key) ?? [];
+
+      // глибока копія лише потрібних масивів
+      const next = prev.map((c) =>
+        c.id === sourceColumnId || c.id === destinationColumnId
+          ? { ...c, tasks: c.tasks.slice() }
+          : c
+      );
+
+      // знайти індекси колонок у масиві
+      const srcColIdx = next.findIndex((c) => c.id === sourceColumnId);
+      const dstColIdx = next.findIndex((c) => c.id === destinationColumnId);
+      if (srcColIdx === -1 || dstColIdx === -1) return { prev };
+
+      // витягнути таск
+      const [moved] = next[srcColIdx].tasks.splice(sourceIndex, 1);
+      if (!moved || moved.id !== taskId) return { prev };
+
+      // вставити на місце
+      next[dstColIdx].tasks.splice(destinationIndex, 0, moved);
+
+      qc.setQueryData<ColumnWithTasks[]>(key, next);
+      return { prev };
+    },
+    onError: (_e, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(key, ctx.prev);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: key });
     },
   });
 }
